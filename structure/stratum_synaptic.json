@@ -1,0 +1,9 @@
+{
+  "governs": ["synaptic_physiology" ],
+  "id":"stratum:6269089ded65dbcf63c3e3e314100893a1f00229ef9e932a750d9dbad6eab18e",
+  "label":"synaptic",
+  "ordinal":7,
+  "scheme":"neuroendocrine",
+  "type":"stratum",
+  "unit":"synapse"
+}

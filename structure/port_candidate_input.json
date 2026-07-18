@@ -1,0 +1,11 @@
+{
+  "accepts": [
+    "occurrent:39849dcbb43d512a7c990e50d4ec7db7c1b3e5a8f5fbc5dd976e07d5f6933c69",
+    "occurrent:344d7ae5370815ee0eb1655af65dcd2e75f2a31ac7442e3f947934f43c36fbdd"
+  ],
+  "bearer":"continuant:dd091a17e42c11878dbfff51d2d2f0a17168c59b9fbf8c3ac551099c8521c4de",
+  "direction":"in",
+  "id":"port:c8f6e544be5ee5ca91694ba78b8400f628e65e63b7767f4796006ca2e7f74877",
+  "label":"candidate_input",
+  "type":"port"
+}

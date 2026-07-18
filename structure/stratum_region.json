@@ -1,0 +1,9 @@
+{
+  "governs": ["systems_neuroscience" ],
+  "id":"stratum:c6adf1ba108cca0ed15df95d61647d4e19ab84b063b755648d12346255424a29",
+  "label":"region",
+  "ordinal":9,
+  "scheme":"neuroendocrine",
+  "type":"stratum",
+  "unit":"brain_region"
+}

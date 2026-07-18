@@ -1,0 +1,3 @@
+# swipl saved states and transient artifacts
+*.qlf
+*.tmp

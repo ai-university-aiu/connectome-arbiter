@@ -1,0 +1,8 @@
+{
+  "accepts": ["occurrent:e3eae84a062608f054cd58e62253a040b19f8ac578d92a6f8ab8f86f364e1786" ],
+  "bearer":"continuant:dd091a17e42c11878dbfff51d2d2f0a17168c59b9fbf8c3ac551099c8521c4de",
+  "direction":"out",
+  "id":"port:a32b7e5ad44c3cba17b8bb52112f7741053d4a38eaf8778b13cf593ebee70849",
+  "label":"action_output",
+  "type":"port"
+}

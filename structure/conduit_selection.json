@@ -1,0 +1,9 @@
+{
+  "carries": ["occurrent:f5414964d141c4815d5821aa1161dc7c63c0e62a2dee2a0be2a44bb19668119e" ],
+  "from":"port:c8f6e544be5ee5ca91694ba78b8400f628e65e63b7767f4796006ca2e7f74877",
+  "id":"conduit:04c2fc1d7785bfe46f8592979977e792fa33e9feb0c948e2f615fa6dfbcca03f",
+  "label":"selection_pathway",
+  "to":"port:a32b7e5ad44c3cba17b8bb52112f7741053d4a38eaf8778b13cf593ebee70849",
+  "transform":"causal_relation_object:ccb8daea0004daaec1e3ae7d64c26e8b1b96ba5bdf183f323cdea7d9c04ef5a8",
+  "type":"conduit"
+}

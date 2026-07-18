@@ -1,0 +1,9 @@
+{
+  "governs": ["sociology" ],
+  "id":"stratum:a8043c2a47bba15efc7eb1b1a37a04a5ba7f4a975585b7a81240eaab05b57c1e",
+  "label":"community_and_society",
+  "ordinal":14,
+  "scheme":"neuroendocrine",
+  "type":"stratum",
+  "unit":"community"
+}
