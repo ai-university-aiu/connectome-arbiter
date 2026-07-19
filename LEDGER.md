@@ -52,7 +52,8 @@ safety contract itself.
   guard, would carry no protection at all.
 - **Evidence.** `packs/region_stratum/prolog/region_stratum.pl`
   (`region_stratum_membership_guard/3`, `region_stratum_emit/3`); the adversarial
-  gate `bin/check_membership.pl`; the override reuses the SAME guard
+  gate `bin/check_membership.sh` (running the battery `bin/check_membership.pl`);
+  the override reuses the SAME guard
   (`packs/community_stratum/prolog/community_stratum.pl`) precisely because there
   is no language-level way to attach the invariant to a type or a port.
 - **Proposed remedy (minimum).** A first-class CONTRACT / INVARIANT construct — a

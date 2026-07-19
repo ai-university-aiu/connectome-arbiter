@@ -63,7 +63,7 @@ Everything reuses a local PrologAI checkout **unmodified** (default
 
 ```bash
 # 1. THE FIRST, NON-NEGOTIABLE GATE: adversarially try to make the selector invent (exit 0 = it cannot).
-bin/check_membership.sh   # (via swipl bin/check_membership.pl; 532 attempts, 0 escapes)
+bin/check_membership.sh   # the wrapper runs the battery bin/check_membership.pl; 532 attempts, 0 escapes
 
 # 2. Run the selector over a set of episodes; exit 0 only if the invariant held on every one.
 bin/run_arbiter.sh
