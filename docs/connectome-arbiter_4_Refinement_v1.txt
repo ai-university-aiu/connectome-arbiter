@@ -1,0 +1,216 @@
+CONNECTOME-ARBITER REFINEMENT  (v1)
+
+This is the fourth of the six connectome-arbiter documents. It is the testing
+story: how the design was verified and improved - the checkers, the tests, the
+adversarial batteries, the gates, and the one build-time bug that was found and
+fixed. Author: the PrologAI Community.
+
+Terms spelled out on first use in this file:
+• PLUnit means the SWI-Prolog unit-testing framework.
+
+• An adversarial battery is a test that deliberately TRIES to break an invariant,
+  rather than confirming it on friendly inputs.
+
+• A gate is a check that must pass (exit success) for the build to be accepted.
+
+• CRO is written in full as causal relation object.
+
+• ARC-AGI means the Abstraction and Reasoning Corpus for Artificial General
+  Intelligence. CI means Continuous Integration. Ed25519, SWI-Prolog, JSON, and Git
+  are external proper names, kept verbatim.
+
+
+PART ONE - THE VERIFICATION PHILOSOPHY
+
+A safety layer cannot be verified by showing it works on good inputs; it must be
+attacked. The refinement discipline here is therefore adversarial first: the
+flagship check does not select from tidy candidate sets and confirm a sensible
+winner - it tries, hundreds of times and from several angles, to make the selector
+emit an action nobody offered, and passes only if not one attempt succeeds. The
+supporting checkers then confirm the structural claims (downward layers, the
+layer-to-stratum binding, zero runtime coupling, valid grounded records), and the
+in-pack tests exercise each construct in isolation. The whole set is the evidence
+that backs the one-sentence deliverable: a selector that cannot violate its
+invariant, and the proof that it cannot.
+
+A second discipline is defence in depth. The invariant is checked in more than one
+place, by more than one mechanism, so no single point of trust carries the whole
+guarantee:
+
+• Layer one, inside the selector. region_stratum_emit/3 classifies every proposal
+  through the membership guard and THROWS on a non-member, so an invention is
+  structurally impossible to return.
+
+• Layer two, inside the override. The fallback filter in
+  community_stratum_best_non_vetoed drops any action that is vetoed or not offered
+  BEFORE it can reach the guard, so a tampered candidate is excluded a step early.
+
+• Layer three, in the driver. run_arbiter_membership_ok independently re-checks
+  every final selection against that episode's offered set, so the runner does not
+  trust the in-selector guard alone.
+
+
+PART TWO - THE ADVERSARIAL MEMBERSHIP BATTERY (the flagship gate)
+
+The battery bin/check_membership.pl is the first, non-negotiable gate. It builds a
+universe of actions in which some are offered and some (ghost, phantom, teleport)
+never are, then it attacks along four fronts:
+
+• Every offered candidate subset drawn from the actions, and for each subset an
+  attempt to emit EVERY action in the universe - members and non-members alike -
+  through region_stratum_emit/3.
+
+• The selection pipeline region_stratum_select/3 over each subset, confirming the
+  emitted winner is always a member.
+
+• The override, in four shapes: a normal un-vetoed pass, a single-veto fallback, an
+  all-vetoed case, and a TAMPERED gained set carrying a top-priority action (ghost)
+  that was never offered.
+
+Every outcome is classified as member (safe), no_selection (safe), refused (safe -
+the guard threw), or escaped (the one forbidden result: a non-member emitted
+without a throw). The gate exits success only if the escape count is exactly zero.
+
+Result: across 532 attempts, zero escapes. The guard refused 364 inventions
+outright; the rest resolved to a genuine member or an explicit no-selection. The
+tampered-gained-set attack is the sharpest of the four, because it proves the
+selector guards against the ORIGINAL offered set rather than the (possibly
+poisoned) gained set that reaches it.
+
+
+PART THREE - THE IN-PACK PLUNIT SUITES
+
+Each of the five packs ships an in-pack PLUnit suite, run by bin/run_tests.sh. The
+suites that carry the safety weight are the selector's and the override's, and they
+are written to TRY to break the invariant.
+
+The region_stratum suite:
+
+• guard_classifies_correctly - a member is endorsed, no-selection is permitted, and
+  an unoffered action returns refused, never selected.
+
+• emit_refuses_invented_action - emitting teleport against a set that lacks it
+  THROWS error(membership_violation(teleport, _)); the test asserts the throw.
+
+• emit_passes_member - a genuine member passes straight through.
+
+• select_always_emits_a_member - the highest-priority member is chosen and proven
+  to be a member.
+
+• select_defeats_tampered_gained - a gained set carrying ghost at top priority makes
+  select THROW, because the guard checks the original set.
+
+• priority_compare_picks_highest - the strict-highest candidate wins.
+
+• records_valid - the ten region records are schema-valid and the selection conduit
+  is computational (it carries a transform).
+
+The community_stratum suite:
+
+• unvetoed_survives - an un-vetoed tentative choice passes through unchanged.
+
+• vetoed_falls_back_to_member - a vetoed top choice falls back to the next-best
+  OFFERED action, proven a member.
+
+• all_vetoed_yields_no_selection - when every offered action is vetoed, the outcome
+  is the explicit no-selection, never an invention.
+
+• override_cannot_invent - a tampered gained set carrying ghost, with both real
+  actions vetoed, still yields no_selection, because ghost is filtered before it can
+  reach the guard (the two-layer defence, made visible in a single test).
+
+• override_is_a_clean_skip - the override causal relation object classifies as
+  skipping with an empty skip-gap list.
+
+• records_valid - the four community records are schema-valid and the provenance
+  assertion carries an Ed25519 signature.
+
+The neural_lattice, synaptic_stratum, and causal_grounding suites cover the
+substrate and the gain: cue post/await/take, the gain arithmetic that leaves
+actions unchanged, and the minting helpers.
+
+
+PART FOUR - THE STRUCTURAL CHECKERS
+
+Four checkers confirm the claims the running code cannot prove about itself.
+
+• check_no_coupling.sh strips comments from each stratum pack and confirms no
+  pack's code names another stratum's runtime tick predicate. It deliberately
+  permits structural imports (grounding, and reuse of the shared guard) and forbids
+  only the runtime tick entry points - the precise line between legal reuse and
+  illegal coupling. Result: zero cross-tick references.
+
+• check_layers.sh runs PrologAI's unmodified layer rule over the arbiter's packs.
+  Result: zero upward edges.
+
+• check_layer_binding.sh runs PrologAI's unmodified N6 binding, reading each
+  stratum's authoritative ordinal from the structure records, and confirms every
+  declared layer is order-consistent with its stratum's ordinal (synaptic 7 to
+  layer 1, region 9 to layer 2, community 14 to layer 3). This build is the first to
+  rest on the enforced binding; the checker was reachable and green.
+
+• validate_structure.sh validates all seventeen records against the Causalontology
+  2.0.0 schema and semantics, confirms the override causal relation object
+  classifies as a clean skip, and verifies the Ed25519 signature.
+
+
+PART FIVE - THE BUG FOUND AND FIXED DURING THE BUILD
+
+One concrete defect surfaced during the build and is recorded in the Git history.
+
+• The flagship membership gate was reachable by the wrong name. The adversarial
+  battery lived only as bin/check_membership.pl, while the README and the LEDGER
+  referred to it as bin/check_membership.sh, and the sibling gates are all shell
+  wrappers picked up by a bin/*.sh loop. As written, the single most important gate
+  would not have been run by the gate loop and could not be invoked by its
+  documented name.
+
+• The fix added bin/check_membership.sh: a thin wrapper (plumbing only) that
+  assembles the same SWI-Prolog library path the sibling gates use, runs the
+  UNMODIFIED battery, and propagates its exit code (zero only if zero escapes). A
+  follow-up corrected the README and LEDGER references so the documented name and
+  the real entry point agree. The battery itself was not altered - only made
+  runnable by its documented name and visible to the gate loop.
+
+This is the honest shape of the finding: not a flaw in the safety logic, but a
+packaging gap that would have let the most important check be skipped silently. It
+was caught, fixed, and its documentation reconciled in the same change.
+
+
+PART SIX - WHAT THE REFINEMENT CONFIRMED (AND WHAT IT DID NOT)
+
+The refinement confirmed three things the Wave 3 verdict and the Wave 4 Part One
+binding had left as open doubts:
+
+• The membership invariant holds, provably. 532 adversarial attempts, zero escapes,
+  and the driver's independent re-check held on all five episodes.
+
+• The override hierarchy fit the layer rule and the N6 binding without strain. The
+  cross-stratal override is a clean downward edge; the layer rule passed with zero
+  upward edges and the binding passed with every layer order-consistent with its
+  ordinal.
+
+• The verdict's internal sub-modules DID recover construct-level isolation. Each of
+  the selector's five sub-modules is exercised in isolation by the region suite, so
+  the hybrid decomposition works in anger.
+
+The refinement did NOT close the deeper gap it revealed: the invariant is as strong
+as user code can make it, but it is a convention enforced by a guard the programmer
+must remember to route every output through, not a property the language checks. A
+second selector written without knowing to call the guard would carry no protection.
+That gap is the Ledger's ARBITER-1, and it belongs to the Completion document, not
+to this testing story - the tests prove the guard works, not that the language
+enforces it.
+
+
+PART SEVEN - REFLECTION ON THE TESTING APPROACH
+
+The main testing trade-off was breadth of attack against runtime cost. The battery
+enumerates every offered subset and every proposed action, which is more than a
+handful of hand-picked cases but still bounded (532 attempts) and fast. The
+alternative - a few illustrative tests - would have read more cleanly but would not
+have earned the word proof. For a safety layer whose entire deliverable is the
+proof, the exhaustive-within-bounds attack is the right cost. The second trade-off
+was trusting the in-selector guard versus re-checking in the driver; the driver
+re-check was kept precisely so that the guarantee does not rest on a single point of
+trust, at the cost of a little duplicated logic that is deliberate, not accidental.

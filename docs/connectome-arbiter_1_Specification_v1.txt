@@ -1,0 +1,217 @@
+CONNECTOME-ARBITER SPECIFICATION  (v1)
+
+This is the first of six documents describing the connectome-arbiter repository.
+The six follow the SPARC methodology - Specification, Pseudocode, Architecture,
+Refinement, and Completion - plus a Demonstration file. Author: the PrologAI
+Community.
+
+Terms spelled out on first use in this file:
+• SPARC means Specification, Pseudocode, Architecture, Refinement, Completion.
+
+• ERC means English-Readable-Code (one plain-English comment above every line of
+  code).
+
+• CRO here is always written in full as causal relation object; the record type
+  is causal_relation_object.
+
+• JSON means JavaScript Object Notation.
+
+• ARC-AGI means the Abstraction and Reasoning Corpus for Artificial General
+  Intelligence.
+
+• CI means Continuous Integration.
+
+• PLUnit means the SWI-Prolog unit-testing framework.
+
+Ed25519, SWI-Prolog, and Git are external proper names, kept verbatim.
+
+
+PART ONE - WHAT THIS REPOSITORY IS
+
+connectome-arbiter is the Wave 4 SAFETY LAYER of the Connectome program. Its
+one-sentence purpose is to isolate the basal-ganglia action selector and make it
+impossible for that selector to output an action that nobody offered. The
+deliverable is a selector that cannot violate its membership invariant, together
+with the proof that it cannot.
+
+The repository models a small slice of a cognitive architecture: a candidate set
+of possible actions arrives, a dopamine-style gain scales their priorities, a
+basal-ganglia selector competes them and picks a winner, and a higher-level
+contextual override may veto that winner. The repository is built stratum-primary:
+one Prolog pack per Causalontology stratum on the outside, with atomic-style
+internal sub-modules on the inside. It rests on PrologAI's enforced layer rule and
+its layer-to-stratum binding, both reused unmodified from a PrologAI checkout.
+
+
+PART TWO - THE SACRED INVARIANT
+
+The single most important property this repository must deliver is the MEMBERSHIP
+INVARIANT:
+
+  On every selection, the emitted output is a member of the input candidate set,
+  or an explicit no-selection. The selector may pick, delay, or pick nothing; it
+  may never invent an option that was not offered.
+
+In a cognitive architecture that will eventually drive behaviour, a selector that
+can emit an unoffered action is the single most dangerous failure mode. The
+repository must make that failure impossible to express, not merely unlikely, and
+it must prove the failure cannot occur.
+
+Two clarifications are part of the specification, not optional readings:
+
+• An explicit no-selection is a LEGAL, invariant-satisfying outcome. Choosing
+  nothing is a decision, not a violation. The invariant forbids exactly one thing:
+  emitting an output that was not offered.
+
+• A no-selection is distinct from a STALL. A run that produced no output because
+  it timed out is recorded as stalled and FAILS the invariant check, so the runner
+  can tell a deliberate no-selection from a hang.
+
+
+PART THREE - FUNCTIONAL REQUIREMENTS
+
+The repository must deliver the following behaviour.
+
+• F1 Candidate intake. Receive a raw candidate set of cand(Action, Priority)
+  terms and canonicalise it by deduplicating on the action, so the membership
+  reference is a well-defined set, keeping the first priority seen per action.
+
+• F2 Dopaminergic gain. Scale each candidate priority by a dopamine tone
+  (Gained = Priority times (1.0 plus Dopamine)), leaving every action unchanged so
+  gain can never alter which actions are offered.
+
+• F3 Priority comparison. Pick the highest-priority candidate of a gained set,
+  keeping the earlier candidate on a tie.
+
+• F4 Membership guard. Classify a proposed action against the offered set as one
+  of three outcomes: an endorsed member, the explicit no-selection, or a REFUSED
+  non-member. A non-member is only ever refused, never endorsed.
+
+• F5 Guarded emit. Produce the guarded output: emit a member, emit no-selection,
+  or THROW. It must be structurally impossible for the emit predicate to return an
+  action that is not a member of the offered set.
+
+• F6 Selection pipeline. Compare the gained candidates, then emit the winner
+  through the membership guard against the ORIGINAL offered set - so that even a
+  tampered gained set carrying an unoffered top-priority action cannot escape.
+
+• F7 Contextual override. Above the selector, allow a context (a veto list) to
+  suppress the tentative selection. A vetoed choice falls back to the
+  highest-priority NON-vetoed OFFERED candidate, or to no-selection if all are
+  vetoed. The override must reuse the SAME membership guard, never re-implement it.
+
+• F8 Lattice coordination. The three strata coordinate only through a single
+  shared Lattice nexus, by numbered phase cue: gain on phase 0 to phase 1,
+  selection on phase 1 to phase 2, override on phase 2 to phase 3. No stratum names
+  another stratum; there is no busy-poll.
+
+• F9 Independent re-check. A driver presents a fixed set of selection episodes and,
+  independently of the in-selector guard, re-checks the membership invariant on
+  every final selection, exiting success only if the invariant held on every one.
+
+• F10 Structure minting. Each stratum pack mints its own Causalontology 2.0.0
+  structure records (the strata, bearers, occurrents, ports, the selection causal
+  relation object, the selection conduit, the override causal relation object, and
+  a signed provenance assertion) and writes each to structure/<name>.json.
+
+
+PART FOUR - NON-FUNCTIONAL REQUIREMENTS
+
+• N1 Grounding in Causalontology 2.0.0. Every anatomical claim is a minted,
+  content-addressed record that validates against the Causalontology 2.0.0 schema
+  and semantics. Dynamics (the dopaminergic gain, a rate law) are kept native and
+  are never forced into a causal relation object.
+
+• N2 The strict layer rule. Package imports run downward only. Substrate packs sit
+  at layer 0; the three stratum packs sit at layers 1, 2, and 3. There must be zero
+  upward edges under PrologAI's unmodified layer construct.
+
+• N3 The layer-to-stratum binding. Each stratum pack declares both its layer and
+  the stratum it represents; the declared layer must be order-consistent with the
+  stratum's authoritative ordinal (synaptic 7, region 9, community_and_society 14).
+  This is the first real build to rest on the enforced binding.
+
+• N4 Closure discipline. State is shared by stigmergy on the Lattice; reactivity is
+  by notification. There are zero actor-to-actor references at runtime and no
+  busy-poll.
+
+• N5 The membership safety invariant. This is the repository's defining safety
+  property, stated in Part Two and enforced by F4, F5, F6, and F7. It is checked
+  twice: inside the selector's emit sub-module, and again independently by the
+  driver.
+
+• N6 Read-only reuse of PrologAI. PrologAI is reused by checkout, not by copy-in.
+  Every gate that depends on a PrologAI-owned tool invokes it from a checkout at
+  the PROLOGAI_HOME path (default the local PrologAI clone). No PrologAI tool is
+  vendored, forked, or re-implemented here.
+
+A note on the invariant and PrologAI. When this repository was built, PrologAI had
+no first-class construct for the membership invariant, so the invariant had to be
+HAND-ROLLED as a guard predicate plus a throwing emit plus an adversarial battery
+(recorded as Ledger finding ARBITER-1). PrologAI has since added a first-class
+membership contract (its N8 construct, a runtime output-member-of-input-set
+postcondition applied by wrapping a predicate), so the same invariant is now ALSO
+expressible by DECLARING that contract rather than by hand-routing every output
+through a guard. This repository predates that contract and does not use it; its
+Specification records that the declarative path now exists.
+
+
+PART FIVE - OBJECTIVES AND CONSTRAINTS
+
+Objectives:
+
+• Prove, adversarially, that the selector cannot emit an unoffered action.
+
+• Show that the Wave 3 decomposition verdict (stratum-primary packs with
+  atomic-style internal sub-modules) recovers per-construct testability.
+
+• Be the first real build to rest on the enforced layer-to-stratum binding.
+
+Constraints:
+
+• Change nothing outside this repository: PrologAI, Mentova, the frozen spike,
+  connectome-proto-agi, and the three frozen Wave 3 arms all stand unmodified as
+  the evidence this build rests on.
+
+• Do not become a general framework. This is one safety component. It builds the
+  arbiter and projects its shape; it does not scale up to the full connectome.
+
+• When a wall is hit, record it as an ARBITER Ledger entry, never as a change to
+  PrologAI.
+
+
+PART SIX - ACCEPTANCE CRITERIA (THE GATES)
+
+The build is accepted only if every gate below passes.
+
+• G1 Membership battery. The adversarial battery bin/check_membership.sh (running
+  bin/check_membership.pl) makes 532 attempts to force an invented emit across
+  every candidate subset, the pipeline, the override, and a tampered gained set,
+  with ZERO escapes. This is the first, non-negotiable gate.
+
+• G2 Runner. bin/run_arbiter.sh runs the five selection episodes and exits success
+  only if the independent membership re-check held on every episode.
+
+• G3 No coupling. bin/check_no_coupling.sh proves no stratum's runtime tick names
+  another stratum's tick - zero actor-to-actor references.
+
+• G4 Layer rule. bin/check_layers.sh runs PrologAI's unmodified strict layer rule
+  and reports zero upward edges.
+
+• G5 Layer-to-stratum binding. bin/check_layer_binding.sh runs PrologAI's
+  unmodified binding check; every pack's layer is order-consistent with its
+  stratum's ordinal.
+
+• G6 Structure validation. bin/validate_structure.sh validates the seventeen minted
+  records against Causalontology 2.0.0, confirms the override causal relation object
+  classifies as a clean skip, and verifies its Ed25519 signature.
+
+• G7 In-pack tests. bin/run_tests.sh runs every pack's PLUnit suite; the selector
+  suite tries to violate the invariant and confirms it cannot.
+
+• G8 Mini regression. The shared PrologAI mini regression (a ten percent
+  spot-check) is green: ARC-AGI-1 40 of 40 and ARC-AGI-2 12 of 12. The full
+  regression is deferred.
+
+The repository is the Wave 4 safety layer only if all eight gates hold and the
+Ledger honestly records the one substantive gap the build revealed.

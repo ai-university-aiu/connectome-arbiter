@@ -1,0 +1,370 @@
+CONNECTOME-ARBITER PSEUDOCODE  (v1)
+
+This is the second of the six connectome-arbiter documents. It gives the logic of
+the repository's main flows in English-Readable-Code (ERC), the structured-English
+notation that maps mechanically to the actual SWI-Prolog source. Author: the
+PrologAI Community.
+
+Terms spelled out on first use in this file:
+• ERC means English-Readable-Code: structured English that translates line by line
+  to real code.
+
+• A PRIMITIVE operation translates one-to-one to a code statement (assignment,
+  arithmetic, comparison, a list operation, or control flow such as IF, FOR EACH,
+  WHILE, TRY).
+
+• A COMPOSITE operation is a higher-level step; where a full translation is needed
+  it is expanded into primitives below.
+
+• A LIBRARY operation maps to a documented external interface; it is REFERENCED by
+  name, never expanded. The Lattice calls (lattice_await, lattice_put,
+  lattice_take), the actor spawn (cyclic_actor), the minting and identity engine
+  (causal_core_identify, co_sign_record, co_validate_schema,
+  causal_core_classify), and SHA-256 hashing (sha_hash) are all LIBRARY
+  operations here.
+
+• CRO is written in full as causal relation object; the record type is
+  causal_relation_object.
+
+• JSON means JavaScript Object Notation. Ed25519 and SWI-Prolog are external
+  proper names, kept verbatim.
+
+How to read the notation: each line begins with an uppercase keyword. PROCEDURE
+names a flow. GUARD is a blocking wait. STEP is a plain action. IF / ELSE IF /
+ELSE / END IF is a conditional. FOR EACH ... END FOR is a loop. SET assigns.
+CREATE declares. RETURN yields a value. THROW raises an error. REFERENCE calls a
+LIBRARY operation by its documented name. TEST states a GIVEN / WHEN / THEN case.
+
+
+PART ONE - THE SYNAPTIC GAIN (pack synaptic_stratum, phase 0 to phase 1)
+
+The dopaminergic gain scales every candidate priority before the selector competes
+them. It is DYNAMICS, kept native as a rate law, never a causal relation object.
+
+PROCEDURE synaptic_stratum_apply_gain(Priority, Dopamine):
+    STEP calculate the sum of one point zero and Dopamine.
+    STEP calculate the product of Priority and that sum.
+    RETURN the product as the gained priority.
+
+PROCEDURE synaptic_stratum_gain_one(Dopamine, cand(Action, Priority)):
+    STEP apply synaptic_stratum_apply_gain to Priority and Dopamine, giving Gained.
+    RETURN cand(Action, Gained), the ACTION carried through unchanged.
+
+PROCEDURE synaptic_stratum_gain_candidates(Candidates, Dopamine):
+    CREATE a list variable called Gained with initial value the empty list.
+    FOR EACH Candidate in Candidates:
+        STEP apply synaptic_stratum_gain_one(Dopamine, Candidate), giving GainedOne.
+        STEP add GainedOne to the end of Gained.
+    END FOR
+    RETURN Gained.
+
+PROCEDURE synaptic_stratum_gain_tick(Nexus):
+    GUARD block with no busy-poll until phase 0 is cued on the Lattice, then take
+        the cued state (REFERENCE neural_lattice_await_cue, which wraps
+        lattice_await then lattice_take).
+    STEP read Candidates, Dopamine, and Token from the cued state.
+    STEP apply synaptic_stratum_gain_candidates(Candidates, Dopamine), giving Gained.
+    SET Token to the sum of Token and one.
+    STEP record and print the synaptic hop for the glass-box trace.
+    STEP add Gained to the state, keeping the ORIGINAL Candidates for the guard.
+    STEP post the phase 1 cue carrying the updated state (REFERENCE
+        neural_lattice_post_cue, which wraps lattice_put); name no downstream
+        stratum, only the NUMBER 1.
+
+
+PART TWO - THE SELECTOR AND ITS FIVE SUB-MODULES (pack region_stratum)
+
+The selector is five independently testable sub-modules: intake, priority-compare,
+membership-guard, emit, and the select pipeline. The membership guard is the single
+enforcement point of the sacred invariant.
+
+PROCEDURE region_stratum_intake(Raw):
+    STEP deduplicate Raw by action so the membership reference is a set, not a bag
+        (COMPOSITE, expanded next), keeping the first priority seen per action.
+    RETURN the canonical candidate set.
+
+PROCEDURE region_stratum_dedup_actions(In, Seen):
+    IF In is the empty list THEN
+        RETURN the empty list.
+    END IF
+    STEP let cand(A, P) be the head of In and Tail be the rest.
+    IF A is a member of Seen THEN
+        RETURN region_stratum_dedup_actions(Tail, Seen).
+    ELSE
+        STEP add A to Seen, giving Seen2.
+        SET Rest to region_stratum_dedup_actions(Tail, Seen2).
+        RETURN cand(A, P) followed by Rest.
+    END IF
+
+PROCEDURE region_stratum_actions_of(Candidates):
+    CREATE a list variable called Actions with initial value the empty list.
+    FOR EACH cand(A, _) in Candidates:
+        STEP add A to the end of Actions.
+    END FOR
+    RETURN Actions.
+
+PROCEDURE region_stratum_priority_compare(Gained):
+    STEP let First be the head of Gained and Rest be the tail.
+    SET Best to First.
+    FOR EACH cand(A, P) in Rest:
+        STEP let cand(_, BestPriority) be Best.
+        IF P is greater than BestPriority THEN
+            SET Best to cand(A, P).
+        ELSE
+            STEP keep Best unchanged (a tie keeps the earlier candidate).
+        END IF
+    END FOR
+    RETURN Best as the highest-priority candidate.
+
+PROCEDURE region_stratum_membership_guard(Candidates, Proposed):
+    IF Proposed is equal to no_selection THEN
+        RETURN no_selection (choosing nothing is always permitted).
+    END IF
+    STEP get Actions from region_stratum_actions_of(Candidates).
+    IF Proposed is a member of Actions THEN
+        RETURN selected(Proposed) (an offered action is endorsed).
+    ELSE
+        RETURN refused(Proposed) (an action nobody offered is REFUSED, never
+            endorsed).
+    END IF
+
+PROCEDURE region_stratum_emit(Candidates, Proposed):
+    STEP classify Proposed with region_stratum_membership_guard(Candidates,
+        Proposed), giving Result.
+    IF Result is selected(A) THEN
+        RETURN A (an endorsed member is emitted).
+    ELSE IF Result is no_selection THEN
+        RETURN no_selection (the explicit no-selection is emitted).
+    ELSE
+        STEP let Result be refused(Bad).
+        THROW error(membership_violation(Bad, Candidates)) - it is structurally
+            impossible for this procedure to RETURN an unoffered action.
+    END IF
+
+PROCEDURE region_stratum_select(Candidates, Gained):
+    STEP get the winner with region_stratum_priority_compare(Gained), giving
+        cand(WinnerAction, _).
+    RETURN region_stratum_emit(Candidates, WinnerAction) - the guard is checked
+        against the ORIGINAL offered Candidates, so a tampered Gained set carrying
+        an unoffered top priority still cannot escape.
+
+PROCEDURE region_stratum_select_tick(Nexus):
+    GUARD block with no busy-poll until phase 1 is cued, then take the state
+        (REFERENCE neural_lattice_await_cue).
+    STEP read the ORIGINAL Candidates, the Gained candidates, and Token.
+    STEP compute Tentative with region_stratum_select(Candidates, Gained) - which
+        passes through the membership guard.
+    SET Token to the sum of Token and one.
+    STEP record and print the region hop; narrate that Tentative is a member or
+        no_selection.
+    STEP add Tentative to the state for the override above it.
+    STEP post the phase 2 cue carrying the state (REFERENCE
+        neural_lattice_post_cue); name no stratum, only the NUMBER 2.
+
+
+PART THREE - THE CONTEXTUAL OVERRIDE (pack community_stratum, phase 2 to phase 3)
+
+The override may veto the region's choice. It never invents: every branch emits
+through region_stratum_emit, the SAME single guard the selector uses.
+
+PROCEDURE community_stratum_apply_override(Context, Candidates, Gained, Tentative):
+    IF Tentative is equal to no_selection THEN
+        RETURN no_selection (a no-selection cannot be overridden into an action).
+    END IF
+    IF Tentative is NOT a member of Context THEN
+        RETURN region_stratum_emit(Candidates, Tentative) - an un-vetoed member
+            passes straight through the shared guard.
+    END IF
+    STEP the tentative choice was vetoed: get Fallback from
+        community_stratum_best_non_vetoed(Gained, Context, Candidates).
+    RETURN region_stratum_emit(Candidates, Fallback) - a member, or no_selection if
+        every offered action was vetoed.
+
+PROCEDURE community_stratum_best_non_vetoed(Gained, Context, Candidates):
+    CREATE a list variable called Allowed with initial value the empty list.
+    FOR EACH cand(A, P) in Gained:
+        IF A is NOT a member of Context AND A is offered in Candidates THEN
+            STEP add cand(A, P) to the end of Allowed.
+        END IF
+    END FOR
+    IF Allowed is the empty list THEN
+        RETURN no_selection (the honest fallback when all are vetoed).
+    ELSE
+        STEP get cand(Fallback, _) from region_stratum_priority_compare(Allowed).
+        RETURN Fallback (reusing the region's own compare).
+    END IF
+
+PROCEDURE community_stratum_override_tick(Nexus):
+    GUARD block with no busy-poll until phase 2 is cued, then take the state
+        (REFERENCE neural_lattice_await_cue).
+    STEP read Candidates, Gained, Tentative, Context, and Token.
+    STEP compute Final with community_stratum_apply_override(Context, Candidates,
+        Gained, Tentative).
+    SET Token to the sum of Token and one.
+    STEP record and print the community hop; narrate that Final is still a member
+        or no_selection.
+    STEP add Final to the state for the driver to read.
+    STEP post the phase 3 cue carrying Final (REFERENCE neural_lattice_post_cue).
+
+
+PART FOUR - THE LATTICE COORDINATION (pack neural_lattice, Layer 0)
+
+The three strata share only the Lattice. State passes by stigmergy; reactivity is
+by notification; there is no busy-poll and no actor names another actor.
+
+PROCEDURE neural_lattice_post_cue(Nexus, Phase, State):
+    STEP build the relation atom phase_<Phase> from the NUMBER (a positional slot,
+        never an identity).
+    REFERENCE lattice_put(Nexus, Relation, [State], []) - which notifies every
+        waiter.
+
+PROCEDURE neural_lattice_await_cue(Nexus, Phase, State):
+    STEP build the relation atom phase_<Phase> from the NUMBER.
+    REFERENCE lattice_await(Nexus, Relation, infinite, _, _) - block with no CPU
+        until the cue exists, woken by the notify a write performs.
+    REFERENCE lattice_take(Nexus, Relation, [State], _) - consume exactly one cue
+        so no stale cue can re-fire.
+
+
+PART FIVE - THE STRUCTURE MINTING (each stratum pack, co-located with its runtime)
+
+Every anatomical claim is a content-addressed Causalontology 2.0.0 record. The
+minting HOW is shared vocabulary in causal_grounding; the record DEFINITIONS are
+one per construct in the owning stratum pack.
+
+PROCEDURE cm_id(Body):
+    REFERENCE causal_core_identify(Body, _, Id) - compute the content-addressed id.
+    STEP attach Id to Body, giving the complete record.
+    RETURN the record.
+
+PROCEDURE region_stratum_selection_cro():
+    STEP mint the candidate-intake occurrent, giving OIntake (the cause).
+    STEP mint the action-selection occurrent, giving OSelect (the effect).
+    STEP mint the causal relation object over [OIntake.id] to [OSelect.id] with
+        modality sufficient and a temporal window, via cm_cro (which folds the
+        extra pairs then calls cm_id).
+    RETURN the selection causal relation object.
+
+PROCEDURE community_stratum_override_cro():
+    STEP mint the contextual-override occurrent (community, ordinal 14), giving
+        OOverride.
+    STEP mint the region action-selection occurrent (region, ordinal 9), giving
+        OAction.
+    STEP mint the causal relation object over [OOverride.id] to [OAction.id] with
+        skips set to true - this thin cut jumps five strata and says so honestly.
+    RETURN the override causal relation object.
+
+PROCEDURE community_stratum_signed_assertion():
+    STEP mint the override causal relation object and read its id.
+    STEP derive the deterministic Ed25519 key for the name connectome_slice
+        (REFERENCE sha_hash over "key:connectome_slice", then the keypair derive).
+    REFERENCE co_sign_record(Body, Secret, assertion, Signed) - stamp the content
+        id and the Ed25519 signature.
+    RETURN the signed provenance assertion.
+
+
+PART SIX - THE RUNNER AND ITS INDEPENDENT RE-CHECK (bin/run_arbiter.pl)
+
+The driver runs five episodes and re-checks the invariant itself, so the guarantee
+does not rest on the in-selector guard alone.
+
+PROCEDURE run_arbiter():
+    STEP open (or reuse) the single Lattice nexus and wipe prior facts.
+    REFERENCE cyclic_actor for each of the three strata - spawn a background thread
+        that blocks on its own phase cue.
+    STEP run run_arbiter_loop over the fixed episodes, threading the Token.
+    STEP stop the three threads.
+    IF run_arbiter_verdict held on every episode THEN halt success ELSE halt
+        failure.
+
+PROCEDURE run_arbiter_loop(Nexus, Episodes, TokenIn):
+    IF Episodes is the empty list THEN RETURN the empty result list. END IF
+    STEP let episode(N, Candidates, Dopamine, Context) be the head.
+    STEP build the seed state carrying the IMMUTABLE Candidates and the inputs.
+    STEP post the phase 0 cue - the synaptic gain wakes and the pipeline begins.
+    TRY run_arbiter_await_final with a 30-second bound (REFERENCE lattice_await
+        then lattice_take on phase_3):
+        SET Final and TokenMid from the returned state.
+    CATCH the timeout:
+        SET Final to stalled and TokenMid to TokenIn (a stall FAILS the check).
+    STEP compute Ok with run_arbiter_membership_ok(Candidates, Final) - the
+        INDEPENDENT re-check.
+    RETURN result(N, Final, Ok) followed by run_arbiter_loop(Nexus, Tail,
+        TokenMid).
+
+PROCEDURE run_arbiter_membership_ok(Candidates, Final):
+    IF Final is equal to no_selection THEN RETURN true. END IF
+    IF Final is a member of the offered Candidates THEN RETURN true. END IF
+    RETURN false (an unoffered action, or a stall, VIOLATES the invariant).
+
+
+PART SEVEN - THE ADVERSARIAL MEMBERSHIP BATTERY (bin/check_membership.pl)
+
+The flagship gate tries, many hundreds of times, to force an invented emit, and
+classifies every outcome. An ESCAPE is the one forbidden result.
+
+PROCEDURE try_emit(Set, Proposed):
+    TRY:
+        STEP compute E with region_stratum_emit(Set, Proposed).
+        IF E is equal to no_selection THEN RETURN no_selection. END IF
+        IF E is a member of Set THEN RETURN member(E). END IF
+        RETURN escaped(E) - a non-member emitted WITHOUT a throw, the danger.
+    CATCH error(membership_violation(_, _)):
+        RETURN refused - the guard threw, which is SAFE.
+
+PROCEDURE membership_battery():
+    CREATE a list variable called AllActions with a universe of actions, some never
+        offered (ghost, phantom, teleport).
+    FOR EACH offered Set drawn from subsets of the actions:
+        FOR EACH Proposed in AllActions:
+            STEP add try_emit(Set, Proposed) to the outcomes.
+        END FOR
+    END FOR
+    STEP add pipeline outcomes from region_stratum_select over each Set.
+    STEP add override outcomes: a normal veto, a fallback veto, an all-vetoed case,
+        and a TAMPERED gained set carrying an unoffered top priority.
+    RETURN all outcomes.
+
+PROCEDURE check_membership_main():
+    STEP run membership_battery, giving Outcomes.
+    STEP count Total outcomes and count the escaped(_) outcomes as EscapeCount.
+    IF EscapeCount is equal to zero THEN
+        STEP report PASS and halt success.
+    ELSE
+        STEP report FAIL with the escapes and halt failure.
+    END IF
+
+
+PART EIGHT - TESTS (GIVEN / WHEN / THEN)
+
+TEST guard_refuses_an_unoffered_action:
+    GIVEN an offered Set of cand(reach,3) and cand(grasp,5).
+    WHEN region_stratum_membership_guard(Set, teleport) is called.
+    THEN the result is refused(teleport), never selected(teleport).
+
+TEST emit_throws_on_an_invention:
+    GIVEN an offered Set that does not contain teleport.
+    WHEN region_stratum_emit(Set, teleport) is called.
+    THEN it THROWS error(membership_violation(teleport, _)); it cannot return.
+
+TEST select_defeats_a_tampered_gained_set:
+    GIVEN an offered Set of cand(reach,3) and cand(grasp,5), and a tampered Gained
+        set carrying cand(ghost,99).
+    WHEN region_stratum_select(Set, Gained) is called.
+    THEN it THROWS on ghost, because the guard checks the ORIGINAL Set.
+
+TEST override_yields_no_selection_when_all_vetoed:
+    GIVEN an offered Set and a Context vetoing every offered action.
+    WHEN community_stratum_apply_override(Context, Set, Gained, grasp) is called.
+    THEN the Final is no_selection, a member-satisfying decision, never an
+        invention.
+
+TEST override_is_a_clean_skip:
+    GIVEN the minted override causal relation object (community 14 to region 9).
+    WHEN community_stratum_skip_check classifies it.
+    THEN the class is skipping and the skip-gaps list is empty.
+
+TEST runner_holds_the_invariant_on_every_episode:
+    GIVEN the five fixed selection episodes.
+    WHEN run_arbiter runs them and re-checks each Final independently.
+    THEN the invariant held on all five, and the run halts success.

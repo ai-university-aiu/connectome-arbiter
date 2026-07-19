@@ -1,0 +1,175 @@
+CONNECTOME-ARBITER DEMONSTRATION  (v1)
+
+This is the sixth of the six connectome-arbiter documents, and the owner's addition
+beyond the five SPARC phases. It is a PLAN of intent for demonstrating the
+repository - what to run, what each step shows, what capabilities it exhibits, and
+what a viewer should conclude. It is a plan, not a finished demonstration. Author:
+the PrologAI Community.
+
+Terms spelled out on first use in this file:
+• SPARC means Specification, Pseudocode, Architecture, Refinement, Completion.
+
+• A gate is a check that must exit success for the build to be accepted.
+
+• Glass-box means the system narrates its own reasoning as it runs, so a viewer can
+  watch each step rather than trust a black box.
+
+• The mini regression is a ten percent spot-check of the ARC benchmarks.
+
+• ARC-AGI means the Abstraction and Reasoning Corpus for Artificial General
+  Intelligence. CRO is written in full as causal relation object. Ed25519,
+  SWI-Prolog, JSON, and Git are external proper names, kept verbatim.
+
+
+PART ONE - WHAT A DEMONSTRATION SHOULD PROVE
+
+The demonstration has one job: convince a viewer that the selector CANNOT emit an
+action nobody offered, and that this is proven rather than asserted. Everything else
+- the grounded anatomy, the layered structure, the Lattice coordination - is
+supporting evidence for that single claim. A viewer who leaves believing only that
+"it usually picks sensibly" has missed the point; the point is that the one
+dangerous failure mode is impossible to express, and there is a battery that tries
+to express it and fails every time.
+
+
+PART TWO - PREPARATION
+
+Before the demonstration:
+
+• Ensure a PrologAI checkout is present and set PROLOGAI_HOME to it (default the
+  local PrologAI clone). Every gate that uses a PrologAI-owned tool reads it from
+  there, read-only.
+
+• Confirm SWI-Prolog 9.x is installed.
+
+• Work from the repository root so the bin/ wrappers resolve their paths.
+
+• Have the README, the LEDGER, and these six documents open, because the
+  demonstration is as much about the honest Ledger as about the green gates.
+
+
+PART THREE - THE DEMONSTRATION SEQUENCE
+
+Run the gates in an order that tells a story: first prove the invariant cannot be
+broken, then show the selector working, then confirm the structure around it.
+
+Step one - the flagship gate. Run bin/check_membership.sh. This is the moment the
+demonstration turns on. The battery makes 532 attempts to force an invented emit -
+across every candidate subset, the pipeline, the override, and a TAMPERED gained set
+that carries a top-priority action nobody offered - and reports the tallies:
+attempts inspected, inventions refused, and escapes. What to point at: the escape
+count is zero, and hundreds of inventions were refused outright. What it shows: the
+selector is structurally incapable of returning an unoffered action; the guard
+throws instead.
+
+Step two - the live selector. Run bin/run_arbiter.sh. The three strata spawn as
+background threads and hand off only by numbered phase cue over the Lattice. The
+glass-box trace narrates five episodes: a normal selection (highest priority wins),
+a vetoed selection (fall back to the next OFFERED action), a total veto (the safe
+outcome is no-selection), a single candidate, and a high-dopamine case (the gain
+raises vigour but never changes WHICH action wins). What to point at: after each
+episode the driver prints its INDEPENDENT invariant check, and the final verdict is
+that the invariant held on five of five with zero actor-to-actor references and no
+busy-poll. What it shows: the guarantee does not rest on the in-selector guard
+alone; the driver re-checks it.
+
+Step three - the closure discipline. Run bin/check_no_coupling.sh. What to point at:
+zero cross-tick references - no stratum's runtime tick names another's. What it
+shows: the strata are genuinely decoupled; they share only the Lattice.
+
+Step four - the layered structure. Run bin/check_layers.sh and then
+bin/check_layer_binding.sh. What to point at: zero upward edges, and every stratum
+pack's layer order-consistent with its stratum's ordinal (synaptic 7 to layer 1,
+region 9 to layer 2, community 14 to layer 3). What it shows: the override hierarchy
+fits PrologAI's strict layer rule and the enforced N6 binding without strain - and
+this is the first real build to rest on that binding.
+
+Step five - the grounded anatomy. Run bin/validate_structure.sh. What to point at:
+all seventeen records valid against Causalontology 2.0.0, the override causal
+relation object classified as a clean skip, and its Ed25519 signature verified. What
+it shows: the selector's own anatomy is content-addressed, schema-valid, and signed
+- not prose but data.
+
+Step six - the in-pack tests. Run bin/run_tests.sh. What to point at: every pack's
+PLUnit suite passes, and the selector and override suites are written to TRY to break
+the invariant. What it shows: the isolation the Wave 3 verdict promised is real -
+each of the selector's five sub-modules is exercised on its own.
+
+Step seven - the regression spot-check. Note the mini regression result: ARC-AGI-1
+40 of 40 and ARC-AGI-2 12 of 12, a TEN PERCENT spot-check, with the full regression
+deferred. What to point at, out loud: this is 40 of 40 and 12 of 12, NOT 400 of 400
+or 120 of 120. What it shows: the surrounding platform did not regress, stated
+honestly at the resolution actually run.
+
+
+PART FOUR - THE CAPABILITIES ON DISPLAY
+
+A viewer who watches the full sequence sees five capabilities:
+
+• A safety invariant enforced by construction - an emit that can only return a
+  member, a no-selection, or a throw.
+
+• Adversarial self-proof - a battery that attacks the invariant from four angles and
+  reports zero escapes.
+
+• Defence in depth - the invariant checked inside the selector, filtered again in the
+  override, and re-checked independently in the driver.
+
+• Decoupled, glass-box coordination - three strata that hand off only by numbered
+  cue over a shared Lattice, narrating every hop.
+
+• Grounded, signed anatomy - seventeen Causalontology 2.0.0 records, one clean
+  cross-stratal skip, one Ed25519 signature, resting on the enforced layer-to-stratum
+  binding.
+
+
+PART FIVE - THE HONEST-LIMITS PORTION OF THE DEMONSTRATION
+
+A demonstration that showed only green gates would be dishonest about this
+repository. Walk the viewer through the LEDGER as the second half:
+
+• ARBITER-1 - the invariant had to be HAND-ROLLED, because at build time PrologAI
+  had no first-class way to declare "the output of this predicate must be a member of
+  this input set". Show that the guarantee, though proven, is a convention a
+  programmer must remember to route every output through. Then show the close: the
+  Specification records that PrologAI has SINCE added exactly that first-class
+  membership contract (its N8 construct), so the invariant is now ALSO expressible by
+  declaration - this repository predates it and does not use it.
+
+• ARBITER-2 - the contextual override crosses five strata with no modeled mechanism,
+  so it honestly carries skips true. Show that the skip flag records "this cut jumps
+  the strata" but still cannot say "a mechanism exists and is deliberately unmodeled
+  here" as distinct from "no mechanism exists".
+
+The intended effect: the viewer should trust the result MORE for having seen the
+gaps named, not less.
+
+
+PART SIX - WHAT A VIEWER SHOULD CONCLUDE
+
+By the end, a viewer should be able to state four things without hedging:
+
+• The selector cannot emit an action nobody offered, and there is a 532-attempt
+  adversarial proof, plus an independent per-episode re-check, that it cannot.
+
+• The winning Wave 3 decomposition (one pack per stratum outside, one construct per
+  sub-module inside) recovered per-construct testability and fit the layer rule and
+  the enforced N6 binding without strain.
+
+• The selector's anatomy is grounded, signed data, not prose - and PrologAI is reused
+  read-only, unmodified, from a pinned checkout.
+
+• The build is honest about its boundaries - a thin cut, a spot-check regression, a
+  hand-rolled guard whose enforcing construct the platform has since gained - which
+  is the posture a safety layer must take.
+
+
+PART SEVEN - REFLECTION ON THE DEMONSTRATION PLAN
+
+The demonstration is ordered to make one point land first and hardest: the flagship
+membership battery runs before anything else, so a viewer sees the impossibility
+proof before seeing the selector do anything pleasant. The trade-off is that the
+narrative leads with a negative result (nothing escaped) rather than a positive one
+(a sensible selection), which is less satisfying to watch but truer to what a safety
+layer is for. The honest-limits portion is placed at the end, not hidden, so the
+green gates and the open Ledger are read as one story rather than two.
