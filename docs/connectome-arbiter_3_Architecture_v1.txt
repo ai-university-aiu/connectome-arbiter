@@ -1,0 +1,255 @@
+CONNECTOME-ARBITER ARCHITECTURE  (v1)
+
+This is the third of the six connectome-arbiter documents. It describes the
+repository's structure: its packs, the Causalontology strata they map to, the
+layer assignments, the Lattice coordination, the interfaces between packs, and
+where it reuses PrologAI read-only. Author: the PrologAI Community.
+
+Terms spelled out on first use in this file:
+• A pack is a self-contained SWI-Prolog module with a manifest (pack.pl), a code
+  module, and an in-pack test suite.
+
+• A stratum is a Causalontology level of organisation with an authoritative
+  ordinal (synaptic is 7, region is 9, community-and-society is 14).
+
+• A layer is PrologAI's strict-layer-rule number: imports may run only downward,
+  from a higher layer to a lower one, never up.
+
+• Stigmergy means coordinating through marks left in a shared medium rather than by
+  addressing another party directly.
+
+• CRO is written in full as causal relation object.
+
+• JSON means JavaScript Object Notation. PROLOGAI_HOME is the environment variable
+  naming the PrologAI checkout. Ed25519 and SWI-Prolog are external proper names.
+
+
+PART ONE - THE ORGANISING PRINCIPLE
+
+The arbiter is built STRATUM-PRIMARY on the outside and CONSTRUCT-PRIMARY on the
+inside - the hybrid decomposition the Wave 3 verdict blessed. On the outside there
+is exactly one pack per Causalontology stratum the arbiter actually occupies. On
+the inside, each stratum pack is cut into small, independently testable
+sub-modules, one per named construct, so the per-construct isolation that pure
+strata would lose is recovered. Beneath the strata sit two unbound substrate packs
+that belong to no stratum.
+
+Two structural rules hold the shape together:
+
+• The strict layer rule (PrologAI's L4 construct). Package imports run downward
+  only. There must be zero upward edges.
+
+• The layer-to-stratum binding (PrologAI's N6 construct). Each stratum pack
+  declares BOTH its layer and its stratum; the declared layer must be
+  order-consistent with the stratum's authoritative ordinal. This repository is the
+  first real build to rest on that enforced binding.
+
+
+PART TWO - THE FIVE PACKS
+
+There are five packs. Two are substrate at layer 0 with no stratum; three are the
+strata the arbiter occupies.
+
+• neural_lattice - layer 0, no stratum (unbound substrate). The closure substrate:
+  stigmergy for state plus notification for reactivity. It wraps PrologAI's
+  library(lattice) into numbered phase cues (post, await, take) and carries the
+  glass-box hop trace. It names no stratum, so it is an unbound gap under the N6
+  binding, never a violation.
+
+• causal_grounding - layer 0, no stratum (unbound substrate). The shared
+  Causalontology 2.0.0 minting vocabulary: fourteen helpers that stamp a
+  content-addressed id, fold key-value pairs, derive the deterministic signing key,
+  and sign a record. The record DEFINITIONS live in the stratum packs; only the
+  minting HOW is shared here, so distributing the definitions is granularity, not
+  duplication.
+
+• synaptic_stratum - layer 1, stratum synaptic (ordinal 7). The dopaminergic gain:
+  it scales candidate priorities before the selector competes them. That is
+  dynamics, kept native as a rate law, never a causal relation object. Its runtime
+  tick awaits phase 0 and posts phase 1.
+
+• region_stratum - layer 2, stratum region (ordinal 9). THE SELECTOR: the
+  basal-ganglia action selector and the single membership guard. Five sub-modules -
+  intake, priority-compare, membership-guard, emit, select. Its runtime tick awaits
+  phase 1 and posts phase 2. It is the sole enforcement point of the sacred
+  invariant.
+
+• community_stratum - layer 3, stratum community-and-society (ordinal 14). THE
+  OVERRIDE: a contextual veto that may suppress the region's choice. It REUSES the
+  region's emit guard rather than re-implementing it. Its runtime tick awaits phase
+  2 and posts phase 3.
+
+
+PART THREE - THE PACK GRAPH (import edges, all downward)
+
+Arrows point in the direction of an import: a higher pack imports a lower one. No
+arrow ever points upward, which is exactly what the layer rule verifies.
+
+    layer 3   community_stratum  (stratum community-and-society, ordinal 14)
+                    |  imports region_stratum (for the action occurrent, the
+                    |          region stratum record, and the SHARED guard)
+                    v
+    layer 2   region_stratum     (stratum region, ordinal 9)
+                    |  imports synaptic_stratum (for the dopaminergic-gain
+                    |          occurrent id the input port accepts)
+                    v
+    layer 1   synaptic_stratum   (stratum synaptic, ordinal 7)
+                    |
+                    |  every stratum pack imports both substrate packs
+                    v
+    layer 0   neural_lattice     causal_grounding      (unbound substrate)
+
+The single cross-stratal runtime relation - community overriding region - is a
+DOWNWARD edge (community 14 sits above region 9), so the override hierarchy fits
+the layer rule and the N6 binding without strain.
+
+
+PART FOUR - THE LATTICE COORDINATION (how the strata run)
+
+At runtime the three strata never call one another. Each runs as a PrologAI
+cyclic_actor (a background thread) and hands off ONLY by posting a numbered phase
+cue on the one shared Lattice nexus. The handoff ring for one selection episode:
+
+    driver  --post phase 0-->  synaptic_stratum  (applies the gain)
+                                     |
+                                     post phase 1
+                                     v
+                               region_stratum    (selects through the guard)
+                                     |
+                                     post phase 2
+                                     v
+                               community_stratum (applies the override)
+                                     |
+                                     post phase 3
+                                     v
+    driver  <--await phase 3--  reads the final selection and re-checks it
+
+Three properties are structural, not aspirational:
+
+• Zero actor-to-actor references. A stratum posts a NUMBER, never the name of the
+  actor that will pick it up. The checker bin/check_no_coupling.sh proves no
+  stratum's runtime tick names another stratum's tick.
+
+• No busy-poll. A stratum blocks on a private message queue inside lattice_await
+  and is woken by the notify that every Lattice write performs.
+
+• One cue at a time. Each stratum TAKES its cue when it acts, then POSTS the next
+  slot's cue, so exactly one stratum is ever active and the glass-box narration
+  reads as a clean sequence.
+
+
+PART FIVE - THE INTERFACES BETWEEN PACKS
+
+Two kinds of interface cross pack boundaries. They are deliberately different, and
+the distinction is what makes the no-coupling claim precise.
+
+• Runtime coordination - Lattice cues only. The gain, selection, and override ticks
+  exchange state solely by numbered phase cue. This is the ONLY runtime channel,
+  and it carries no actor identity.
+
+• Structural imports - the shared safety seam. region_stratum exports
+  region_stratum_emit/3 (the guard), region_stratum_priority_compare/2,
+  region_stratum_action_occurrent/1, and region_stratum_stratum/1.
+  community_stratum imports the first two to obey the invariant through the SAME
+  enforcement point, and the last two to mint its override causal relation object.
+  region_stratum imports synaptic_stratum_gain_occurrent/1 to build its
+  candidate-input port. These imports are grounding and safety reuse, not runtime
+  coupling, and they are all downward.
+
+The membership guard being a single shared export is the whole point: the invariant
+has one enforcement point, exercised from every call site (the selector and the
+override alike).
+
+
+PART SIX - WHERE PROLOGAI IS REUSED, READ-ONLY
+
+Everything reuses a local PrologAI checkout UNMODIFIED, by checkout and not by
+copy-in, located at the PROLOGAI_HOME path (default the local PrologAI clone). No
+PrologAI tool is vendored, forked, or re-implemented here. The reused pieces:
+
+• library(lattice) - the stigmergy plus await/notify substrate, wrapped by
+  neural_lattice.
+
+• library(actors) - the cyclic_actor background threads the runner spawns.
+
+• library(causal_core) - the Causalontology 2.0.0 identity, kind inference,
+  semantics, and the classify/skip-gap algorithms.
+
+• The conformance harness under tests/causalontology_conformance - the JSON-schema
+  validator (co_validate_schema), the pure-Prolog Ed25519 signing layer, and the
+  schemas.
+
+• PrologAI's library(layer) - the UNMODIFIED L4 layer rule and the N6 binding
+  check, run against the arbiter's own packs and structure records.
+
+• The shared mini-regression harness - the ten percent ARC spot-check.
+
+Every gate that depends on a PrologAI-owned tool invokes it from the checkout. If
+any had been unreachable, the build would have stopped and recorded it as an
+ARBITER Ledger entry rather than skipping a safety gate.
+
+
+PART SEVEN - THE STRUCTURE RECORDS (the arbiter's grounded anatomy)
+
+Each stratum pack co-locates its Causalontology 2.0.0 records with its runtime and
+writes each to structure/<name>.json. There are seventeen records across the three
+strata, spanning eight kinds (stratum, continuant, occurrent, realizable, port,
+causal relation object, conduit, assertion):
+
+• synaptic_stratum mints three: the synaptic stratum, the dopaminergic-gain
+  occurrent, and the nigral source continuant.
+
+• region_stratum mints ten: the region stratum, the basal-ganglia continuant, the
+  intake / selection / emission occurrents, the selection disposition, the
+  candidate-input and action-output ports, the selection causal relation object,
+  and the computational selection conduit.
+
+• community_stratum mints four: the community stratum, the contextual-override
+  occurrent, the override causal relation object (flagged skips true), and the
+  Ed25519-signed provenance assertion over it.
+
+The override causal relation object crosses five strata with no modeled
+intervening mechanism, so it honestly carries skips true and classifies as a clean
+skip (class skipping, no skip-gap). The validator confirms the classification and
+verifies the signature.
+
+
+PART EIGHT - THE RUNNERS AND CHECKERS (bin/)
+
+The bin/ directory holds the entry points, each a thin wrapper that assembles the
+SWI-Prolog library path over the arbiter packs plus the reused PrologAI directories
+and propagates the inner exit code:
+
+• check_membership.sh over check_membership.pl - the adversarial battery.
+• run_arbiter.sh over run_arbiter.pl - the episode runner and independent re-check.
+• check_no_coupling.sh - the runtime-coupling checker (a small Python scan).
+• check_layers.sh - PrologAI's unmodified layer rule.
+• check_layer_binding.sh - PrologAI's unmodified N6 binding, reading ordinals from
+  structure/.
+• validate_structure.sh over validate_structure.pl - the Causalontology 2.0.0
+  validation, skip finding, and signature check.
+• run_tests.sh - every pack's in-pack PLUnit suite.
+
+
+PART NINE - REFLECTION ON THE DESIGN
+
+Three architectural choices carried the most weight, each with a recorded
+trade-off.
+
+• Stratum-primary with construct-primary interiors. The alternative was pure strata
+  (coarse, hiding the constructs) or pure atomic packs (one pack per construct,
+  many packs). The hybrid keeps the pack count small - five packs - while the
+  interior sub-modules recover per-construct testability. The trade-off is that a
+  stratum pack co-locates its structure records with its runtime, so importing it
+  for validation pulls in the Lattice too; this is known and noted, not hidden.
+
+• A single shared membership guard. The override could have carried its own copy of
+  the invariant. Making it REUSE region_stratum_emit/3 gives the invariant one
+  enforcement point exercised from every call site, so there is no second, weaker
+  copy to drift. The trade-off is a structural import edge from community to region,
+  which is downward and therefore legal.
+
+• Coordination through the Lattice alone. Direct actor-to-actor calls would have
+  been simpler to write but would have coupled the strata and defeated the closure
+  discipline. Numbered phase cues cost a little narration legibility (paid back by
+  the glass-box trace) and buy zero coupling, provable by a checker.

@@ -1,0 +1,177 @@
+CONNECTOME-ARBITER COMPLETION  (v1)
+
+This is the fifth of the six connectome-arbiter documents. It records the delivered
+status: what passed, the final gate results in honest form, the pinned PrologAI
+commit the repository was built against, and the repository's honest limits.
+Author: the PrologAI Community.
+
+Terms spelled out on first use in this file:
+• A gate is a check that must exit success for the build to be accepted.
+
+• The mini regression is a ten percent spot-check of the ARC benchmarks, not the
+  full run.
+
+• ARC-AGI means the Abstraction and Reasoning Corpus for Artificial General
+  Intelligence.
+
+• CRO is written in full as causal relation object.
+
+• A Ledger finding is a wall the build hit, recorded rather than worked around.
+
+• CI means Continuous Integration. Ed25519, SWI-Prolog, JSON, and Git are external
+  proper names, kept verbatim.
+
+
+PART ONE - DELIVERED STATUS
+
+connectome-arbiter is delivered as the Wave 4 safety layer. The deliverable is a
+basal-ganglia action selector that cannot violate its membership invariant,
+together with the proof that it cannot. All eight acceptance gates hold, the
+seventeen grounded structure records validate, and the one substantive gap the
+build revealed is recorded honestly in the Ledger rather than patched over.
+
+The membership invariant held on every selection: 532 adversarial attempts, zero
+escapes, and five clean episodes, and it is checked twice - once inside the
+selector's emit sub-module and again, independently, by the driver. The override
+hierarchy behaves as specified and every override still obeys membership. The strata
+share only the Lattice, with no busy-poll. PrologAI, Mentova, the frozen spike,
+connectome-proto-agi, and the three frozen Wave 3 arms are all unmodified.
+
+
+PART TWO - THE FINAL GATE RESULTS (HONEST FORM)
+
+• G1 Membership battery - PASS. bin/check_membership.sh (running
+  bin/check_membership.pl) made 532 attempts to force an invented emit across every
+  candidate subset, the pipeline, the override, and a tampered gained set. Zero
+  escapes. The guard refused 364 inventions outright; the remainder resolved to a
+  genuine member or an explicit no-selection.
+
+• G2 Runner - PASS. bin/run_arbiter.sh ran five selection episodes; the driver's
+  independent membership re-check held on all five (invariant held on five of five).
+
+• G3 No coupling - PASS. bin/check_no_coupling.sh found zero actor-to-actor
+  references; the three strata hand off solely by numbered phase cue.
+
+• G4 Layer rule - PASS. bin/check_layers.sh ran PrologAI's unmodified strict layer
+  rule and reported zero upward edges.
+
+• G5 Layer-to-stratum binding - PASS. bin/check_layer_binding.sh ran PrologAI's
+  unmodified N6 binding; every stratum pack's layer is order-consistent with its
+  stratum's ordinal (synaptic 7 to layer 1, region 9 to layer 2, community 14 to
+  layer 3). This is the first real build to rest on the enforced binding, and the
+  checker was reachable and green.
+
+• G6 Structure validation - PASS. bin/validate_structure.sh validated all seventeen
+  records against Causalontology 2.0.0, confirmed the override causal relation
+  object classifies as a clean skip (class skipping, empty skip-gap list, community
+  14 to region 9), and verified its Ed25519 signature.
+
+• G7 In-pack tests - PASS. bin/run_tests.sh ran every pack's PLUnit suite; the
+  selector and override suites tried to violate the invariant and confirmed they
+  could not.
+
+• G8 Mini regression - PASS (spot-check only). The shared PrologAI mini regression
+  is green: ARC-AGI-1 40 of 40 and ARC-AGI-2 12 of 12. This is a TEN PERCENT
+  spot-check (every tenth task), NOT the full benchmark. The full regression
+  (ARC-AGI-1 400 of 400, ARC-AGI-2 120 of 120) is DEFERRED; a green mini result
+  does not refresh or restate the full scores.
+
+
+PART THREE - THE STRUCTURE RECORDS DELIVERED
+
+Seventeen Causalontology 2.0.0 records were minted and written to
+structure/<name>.json, spanning eight kinds (stratum, continuant, occurrent,
+realizable, port, causal relation object, conduit, assertion):
+
+• Three from synaptic_stratum: the synaptic stratum, the dopaminergic-gain
+  occurrent, and the nigral source continuant.
+
+• Ten from region_stratum: the region stratum, the basal-ganglia continuant, the
+  intake / selection / emission occurrents, the selection disposition, the
+  candidate-input and action-output ports, the selection causal relation object,
+  and the computational selection conduit.
+
+• Four from community_stratum: the community stratum, the contextual-override
+  occurrent, the override causal relation object (flagged skips true), and the
+  Ed25519-signed provenance assertion.
+
+Every record validated with no friction against the schema, the semantics, the skip
+classification, and the signature.
+
+
+PART FOUR - THE PINNED PROLOGAI COMMIT
+
+The gates ran against PrologAI main at commit 7da3070. Wave 4 Part One landed the
+N6 layer-to-stratum binding at commit 798fbe5; 7da3070 is its Ledger-citation
+follow-on. All PrologAI checkers and the mini-regression harness were reachable and
+green from that checkout. Every PrologAI dependency is reused read-only from the
+checkout at the PROLOGAI_HOME path (default the local PrologAI clone): none is
+vendored, forked, or re-implemented here. Had any PrologAI tool been unreachable,
+the build would have stopped and recorded it as an ARBITER Ledger entry rather than
+skipping a safety gate.
+
+
+PART FIVE - THE HONEST LIMITS (OPEN LEDGER FINDINGS)
+
+The Ledger is a product of the program, not a defect list. Two findings stand
+open.
+
+• ARBITER-1 (severity high) - PrologAI cannot express the membership invariant as a
+  first-class checked property. The invariant had to be HAND-ROLLED three ways: a
+  guard predicate that classifies a proposal, a guarded emit that throws on a
+  non-member, and the adversarial battery that confirms no escape. It is as strong
+  as user code can make it, but it is a convention enforced by a guard the
+  programmer must remember to route every output through, not a property the
+  language checks. A second selector written without knowing to call the guard would
+  carry no protection. The proposed minimum remedy is a first-class contract - a
+  declared postcondition such as output-member-of(InputSet) that the language checks
+  and refuses to violate.
+
+  Update recorded in the Specification: PrologAI has SINCE added exactly such a
+  first-class membership contract (its N8 construct, a runtime
+  output-member-of-input-set postcondition applied by wrapping a predicate), so the
+  same invariant is now ALSO expressible by DECLARING that contract rather than by
+  hand-routing every output through a guard. This repository PREDATES that contract
+  and does not use it; the Completion simply records that the declarative path now
+  exists, closing the gap ARBITER-1 named.
+
+• ARBITER-2 (severity medium, a second sighting of the slice's P2) - a cross-stratal
+  override carries skips true because this thin cut does not model its mechanism.
+  Biologically the override is mediated by a real pathway, but the cut models only
+  the two endpoints, so the override causal relation object crosses five strata and
+  must carry skips true to validate. The Causalontology skips flag faithfully
+  records that the cut jumps the strata, but there is still no way to say a
+  mechanism EXISTS and is deliberately unmodeled here, as distinct from no mechanism
+  exists - the honest-ignorance distinction P2 first raised. This is a known,
+  deliberate boundary of a thin safety cut, not a defect in the selector.
+
+
+PART SIX - WHAT THE BUILD DID NOT CLAIM
+
+The Completion is deliberately conservative about scope:
+
+• No full ARC benchmark score is claimed. The mini regression is a ten percent
+  spot-check (40 of 40 and 12 of 12); the full run is deferred and is not restated
+  here as 400 of 400 or 120 of 120.
+
+• The repository is one safety component, not a general framework. It builds the
+  arbiter and PROJECTS its shape; it does not scale up to the full connectome.
+
+• It modifies nothing outside itself. A wall is an ARBITER Ledger entry, never a
+  commit to PrologAI, Mentova, the frozen spike, connectome-proto-agi, or the three
+  frozen arms - all of which stand unmodified as the evidence this build rests on.
+
+
+PART SEVEN - REFLECTION ON COMPLETION
+
+The safety layer is complete in the sense that matters most for a safety layer: the
+one property it exists to guarantee is proven, adversarially, and re-checked
+independently. The single most valuable output is not the selector but the Ledger
+finding ARBITER-1 - the recognition that a load-bearing safety property was honoured
+by convention until the language was taught to enforce it, exactly the recurring
+theme of the program. That the enforcing construct (the N8 membership contract) now
+exists in PrologAI is the clean close of the loop: the wall the build hit became the
+next construct the platform gained. The trade-off accepted throughout was to keep
+this build honest about its boundaries - a thin cut, a spot-check regression, a
+hand-rolled guard - rather than to overstate a finished-looking result, which is the
+posture a safety layer must take.
