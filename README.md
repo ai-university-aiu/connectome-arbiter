@@ -101,6 +101,44 @@ connectome-proto-agi, and the three frozen Wave 3 arms are unmodified. See
 [`LEDGER.md`](LEDGER.md) for ARBITER-1 (the one substantive gap: PrologAI has no
 first-class way to express the membership invariant) and ARBITER-2.
 
+## Cross-repo provenance and resolved clarifications
+
+This build reuses PrologAI **read-only, by checkout, not by copy-in**, exactly as
+the Wave 2 slice and the three Wave 3 arms did. Every gate that depends on a
+PrologAI-owned tool — the N6 binding checker, the structure validator's engine,
+and the mini-regression harness — invokes it from a PrologAI checkout at
+`$PROLOGAI_HOME` (default `/home/ccaitwo/PrologAI`); none of PrologAI's tools is
+vendored, forked, or re-implemented here (a local re-implementation of the binding
+checker would defeat the point of resting on PrologAI's enforced invariant). The
+two substrate packs (`neural_lattice`, `causal_grounding`) are the Connectome
+family's shared substrate, reused as the arms reuse them — they are not PrologAI
+tools.
+
+- **Pinned PrologAI commit.** The gates ran against PrologAI `main` at
+  **`7da3070`** (Wave 4 Part One landed the N6 binding at `798fbe5`; `7da3070` is
+  its Ledger-citation follow-on). All PrologAI checkers and the harness were
+  reachable and green from that checkout; had any been unreachable, the build
+  would have stopped and recorded it as an ARBITER Ledger entry rather than
+  skipping a safety gate.
+
+- **Stratum palette.** The arbiter uses the Connectome family's strata and their
+  authoritative ordinals (read from the structure records, per N6): **synaptic
+  (ordinal 7), region (ordinal 9), community_and_society (ordinal 14)**. It
+  touches ONLY the three strata its constructs actually occupy — the dopaminergic
+  gain (synaptic), the basal-ganglia selector (region), and the contextual
+  override (community) — so no empty stratum packs were created to fill the
+  palette, and no new stratum was invented.
+
+- **No-selection is a legal, invariant-satisfying outcome.** The invariant forbids
+  exactly one thing: emitting an output that was not offered. Choosing nothing (an
+  explicit, represented `no_selection`) is a decision, not a violation — the guard
+  permits it and the driver counts it as holding the invariant. The violation the
+  guard catches is a NON-member emit, and the tests that try to violate the
+  invariant attempt exactly that (and are refused). An explicit `no_selection` is
+  distinguished from a STALL: a run that produced no output because it timed out is
+  recorded as `stalled` and FAILS the invariant check, so the runner can tell a
+  deliberate no-selection from a hang and report which occurred.
+
 ## Boundaries (what this repository must not become)
 
 Not a general framework — it is one safety component, built stratum-primary. It
