@@ -3,7 +3,7 @@ name(causal_grounding).
 % State the fact: version('0.1.0') — a safety-layer prototype.
 version('0.1.0').
 % State the fact: title naming the pack as the shared minting helpers every stratum pack reuses.
-title('Connectome arbiter — causal_grounding: the shared Causalontology 2.0.0 minting vocabulary').
+title('Connectome arbiter — causal_grounding: the shared Causalontology 3.0.0 minting vocabulary').
 % State the fact: author is the PrologAI Community.
 author('PrologAI Community', 'ai.university.aiu@gmail.com').
 % State the fact: home points at the connectome-arbiter repository.

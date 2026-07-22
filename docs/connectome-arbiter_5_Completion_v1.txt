@@ -62,7 +62,7 @@ PART TWO - THE FINAL GATE RESULTS (HONEST FORM)
   checker was reachable and green.
 
 • G6 Structure validation - PASS. bin/validate_structure.sh validated all seventeen
-  records against Causalontology 2.0.0, confirmed the override causal relation
+  records against Causalontology 3.0.0, confirmed the override causal relation
   object classifies as a clean skip (class skipping, empty skip-gap list, community
   14 to region 9), and verified its Ed25519 signature.
 
@@ -79,7 +79,7 @@ PART TWO - THE FINAL GATE RESULTS (HONEST FORM)
 
 PART THREE - THE STRUCTURE RECORDS DELIVERED
 
-Seventeen Causalontology 2.0.0 records were minted and written to
+Seventeen Causalontology 3.0.0 records were minted and written to
 structure/<name>.json, spanning eight kinds (stratum, continuant, occurrent,
 realizable, port, causal relation object, conduit, assertion):
 
@@ -101,9 +101,9 @@ classification, and the signature.
 
 PART FOUR - THE PINNED PROLOGAI COMMIT
 
-The gates ran against PrologAI main at commit 7da3070. Wave 4 Part One landed the
-N6 layer-to-stratum binding at commit 798fbe5; 7da3070 is its Ledger-citation
-follow-on. All PrologAI checkers and the mini-regression harness were reachable and
+The gates ran against PrologAI main at commit a1b2343. Wave 4 Part One landed the
+N6 layer-to-stratum binding at commit 798fbe5; a1b2343 is Wave 10 Stage 1, the Causalontology 3.0.0
+adoption. All PrologAI checkers and the mini-regression harness were reachable and
 green from that checkout. Every PrologAI dependency is reused read-only from the
 checkout at the PROLOGAI_HOME path (default the local PrologAI clone): none is
 vendored, forked, or re-implemented here. Had any PrologAI tool been unreachable,
