@@ -9,7 +9,7 @@
     causal_relation_object, per the grounding rule) — here a single sub-module,
     synaptic_stratum_apply_gain/3.
 
-    Its STRUCTURE is grounded in Causalontology 2.0.0: the synaptic stratum
+    Its STRUCTURE is grounded in Causalontology 3.0.0: the synaptic stratum
     record, the dopaminergic-gain occurrent stamped at it, and the nigral
     continuant that is the gain's source.
 

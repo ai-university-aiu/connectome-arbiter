@@ -109,7 +109,7 @@ The repository must deliver the following behaviour.
   independently of the in-selector guard, re-checks the membership invariant on
   every final selection, exiting success only if the invariant held on every one.
 
-• F10 Structure minting. Each stratum pack mints its own Causalontology 2.0.0
+• F10 Structure minting. Each stratum pack mints its own Causalontology 3.0.0
   structure records (the strata, bearers, occurrents, ports, the selection causal
   relation object, the selection conduit, the override causal relation object, and
   a signed provenance assertion) and writes each to structure/<name>.json.
@@ -117,8 +117,8 @@ The repository must deliver the following behaviour.
 
 PART FOUR - NON-FUNCTIONAL REQUIREMENTS
 
-• N1 Grounding in Causalontology 2.0.0. Every anatomical claim is a minted,
-  content-addressed record that validates against the Causalontology 2.0.0 schema
+• N1 Grounding in Causalontology 3.0.0. Every anatomical claim is a minted,
+  content-addressed record that validates against the Causalontology 3.0.0 schema
   and semantics. Dynamics (the dopaminergic gain, a rate law) are kept native and
   are never forced into a causal relation object.
 
@@ -203,7 +203,7 @@ The build is accepted only if every gate below passes.
   stratum's ordinal.
 
 • G6 Structure validation. bin/validate_structure.sh validates the seventeen minted
-  records against Causalontology 2.0.0, confirms the override causal relation object
+  records against Causalontology 3.0.0, confirms the override causal relation object
   classifies as a clean skip, and verifies its Ed25519 signature.
 
 • G7 In-pack tests. bin/run_tests.sh runs every pack's PLUnit suite; the selector

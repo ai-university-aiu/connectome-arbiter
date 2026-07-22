@@ -150,7 +150,7 @@ Four checkers confirm the claims the running code cannot prove about itself.
   rest on the enforced binding; the checker was reachable and green.
 
 • validate_structure.sh validates all seventeen records against the Causalontology
-  2.0.0 schema and semantics, confirms the override causal relation object
+  3.0.0 schema and semantics, confirms the override causal relation object
   classifies as a clean skip, and verifies the Ed25519 signature.
 
 

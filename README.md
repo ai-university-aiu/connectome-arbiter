@@ -77,7 +77,7 @@ bin/check_layers.sh
 # 5. Run PrologAI's UNMODIFIED N6 binding: every pack's layer is order-consistent with its stratum's ordinal.
 bin/check_layer_binding.sh   # this build is the first to rest on the enforced N6 invariant
 
-# 6. Validate the selector's Causalontology 2.0.0 structure records (17 records + the override skip + signature).
+# 6. Validate the selector's Causalontology 3.0.0 structure records (17 records + the override skip + signature).
 bin/validate_structure.sh
 
 # 7. Run every pack's in-pack PLUnit suite (the selector suite TRIES to violate the invariant).
@@ -93,7 +93,7 @@ behaves as specified and every override still obeys membership. The strata share
 only the Lattice with no busy-poll. The strict layer rule passes with zero upward
 edges; the N6 binding passes with every layer order-consistent with its stratum's
 ordinal (the first real build to rest on the enforced binding, and the checker was
-reachable and green). The seventeen newly-minted Causalontology 2.0.0 records
+reachable and green). The seventeen newly-minted Causalontology 3.0.0 records
 validate, including the community→region override skip and its Ed25519 signature.
 The mini regression is green (ARC-AGI-1 40/40, ARC-AGI-2 12/12 — a 10 percent
 spot-check; full regression deferred). PrologAI, Mentova, the frozen spike,
@@ -115,8 +115,8 @@ family's shared substrate, reused as the arms reuse them — they are not Prolog
 tools.
 
 - **Pinned PrologAI commit.** The gates ran against PrologAI `main` at
-  **`7da3070`** (Wave 4 Part One landed the N6 binding at `798fbe5`; `7da3070` is
-  its Ledger-citation follow-on). All PrologAI checkers and the harness were
+  **`a1b2343`** (Wave 4 Part One landed the N6 binding at `798fbe5`; `a1b2343` is
+  Wave 10 Stage 1, the Causalontology 3.0.0 adoption). All PrologAI checkers and the harness were
   reachable and green from that checkout; had any been unreachable, the build
   would have stopped and recorded it as an ARBITER Ledger entry rather than
   skipping a safety gate.

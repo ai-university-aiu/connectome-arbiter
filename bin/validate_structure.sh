@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# validate_structure.sh — validate the arbiter's Causalontology 2.0.0 structure records.
+# validate_structure.sh — validate the arbiter's Causalontology 3.0.0 structure records.
 #
 # Assembles the library path over the arbiter packs plus the PrologAI grounding
 # engine and conformance harness. Because the region stratum co-locates its

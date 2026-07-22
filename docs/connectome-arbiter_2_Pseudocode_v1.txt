@@ -228,7 +228,7 @@ PROCEDURE neural_lattice_await_cue(Nexus, Phase, State):
 
 PART FIVE - THE STRUCTURE MINTING (each stratum pack, co-located with its runtime)
 
-Every anatomical claim is a content-addressed Causalontology 2.0.0 record. The
+Every anatomical claim is a content-addressed Causalontology 3.0.0 record. The
 minting HOW is shared vocabulary in causal_grounding; the record DEFINITIONS are
 one per construct in the owning stratum pack.
 

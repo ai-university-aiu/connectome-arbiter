@@ -85,7 +85,7 @@ fits PrologAI's strict layer rule and the enforced N6 binding without strain - a
 this is the first real build to rest on that binding.
 
 Step five - the grounded anatomy. Run bin/validate_structure.sh. What to point at:
-all seventeen records valid against Causalontology 2.0.0, the override causal
+all seventeen records valid against Causalontology 3.0.0, the override causal
 relation object classified as a clean skip, and its Ed25519 signature verified. What
 it shows: the selector's own anatomy is content-addressed, schema-valid, and signed
 - not prose but data.
@@ -118,7 +118,7 @@ A viewer who watches the full sequence sees five capabilities:
 • Decoupled, glass-box coordination - three strata that hand off only by numbered
   cue over a shared Lattice, narrating every hop.
 
-• Grounded, signed anatomy - seventeen Causalontology 2.0.0 records, one clean
+• Grounded, signed anatomy - seventeen Causalontology 3.0.0 records, one clean
   cross-stratal skip, one Ed25519 signature, resting on the enforced layer-to-stratum
   binding.
 

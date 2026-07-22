@@ -57,7 +57,7 @@ strata the arbiter occupies.
   binding, never a violation.
 
 • causal_grounding - layer 0, no stratum (unbound substrate). The shared
-  Causalontology 2.0.0 minting vocabulary: fourteen helpers that stamp a
+  Causalontology 3.0.0 minting vocabulary: fourteen helpers that stamp a
   content-addressed id, fold key-value pairs, derive the deterministic signing key,
   and sign a record. The record DEFINITIONS live in the stratum packs; only the
   minting HOW is shared here, so distributing the definitions is granularity, not
@@ -172,7 +172,7 @@ PrologAI tool is vendored, forked, or re-implemented here. The reused pieces:
 
 • library(actors) - the cyclic_actor background threads the runner spawns.
 
-• library(causal_core) - the Causalontology 2.0.0 identity, kind inference,
+• library(causal_core) - the Causalontology 3.0.0 identity, kind inference,
   semantics, and the classify/skip-gap algorithms.
 
 • The conformance harness under tests/causalontology_conformance - the JSON-schema
@@ -191,7 +191,7 @@ ARBITER Ledger entry rather than skipping a safety gate.
 
 PART SEVEN - THE STRUCTURE RECORDS (the arbiter's grounded anatomy)
 
-Each stratum pack co-locates its Causalontology 2.0.0 records with its runtime and
+Each stratum pack co-locates its Causalontology 3.0.0 records with its runtime and
 writes each to structure/<name>.json. There are seventeen records across the three
 strata, spanning eight kinds (stratum, continuant, occurrent, realizable, port,
 causal relation object, conduit, assertion):
@@ -226,7 +226,7 @@ and propagates the inner exit code:
 • check_layers.sh - PrologAI's unmodified layer rule.
 • check_layer_binding.sh - PrologAI's unmodified N6 binding, reading ordinals from
   structure/.
-• validate_structure.sh over validate_structure.pl - the Causalontology 2.0.0
+• validate_structure.sh over validate_structure.pl - the Causalontology 3.0.0
   validation, skip finding, and signature check.
 • run_tests.sh - every pack's in-pack PLUnit suite.
 

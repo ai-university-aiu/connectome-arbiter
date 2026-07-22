@@ -2,7 +2,7 @@
 
     THE DELIBERATE SHARED-INFRASTRUCTURE DECISION (recorded in COMPARISON.md).
     The atomic rule is one pack per named construct, and every construct that is
-    grounded mints its OWN Causalontology 2.0.0 record in its OWN pack. But the
+    grounded mints its OWN Causalontology 3.0.0 record in its OWN pack. But the
     HOW of minting — stamping a content-addressed id, folding extra key-value
     pairs, deriving the deterministic signing key — is not a construct; it is
     vocabulary. Re-implementing these fourteen helpers inside each of the nine
